@@ -1,14 +1,30 @@
-# Get-SystemSettings.ps1
+# Get-DeskSetup.ps1
 # Saves a combined display + audio report to a single text file.
 #
 # Usage:
-#   .\Get-SystemSettings.ps1          -> saves as system-settings_<timestamp>.txt
-#   .\Get-SystemSettings.ps1 -n m1    -> saves as m1.txt
+#   .\Get-DeskSetup.ps1          -> saves as desk-setup_<timestamp>.txt
+#   .\Get-DeskSetup.ps1 -n m1    -> saves as m1.txt
 
 param(
     [Alias("n")]
     [string] $Name   # Optional custom filename (without .txt)
 )
+
+# Always execute the main logic in a fresh child PowerShell process so
+# type caching from previous runs cannot affect Main display detection.
+if (-not $env:DESKSETUP_CHILD) {
+    $env:DESKSETUP_CHILD = "1"
+    $childArgs = @()
+    if ($Name) {
+        $childArgs += @("-n", $Name)
+    }
+
+    & powershell -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath @childArgs
+    $exitCode = $LASTEXITCODE
+
+    Remove-Item Env:DESKSETUP_CHILD -ErrorAction SilentlyContinue
+    exit $exitCode
+}
 
 # ===========================================================================
 # DISPLAY HELPER  (calls user32.dll to read topology and monitor info)
@@ -214,7 +230,8 @@ $lines.Add("=" * 40)
 # --- Section 1: Display mode ---
 $lines.Add("")
 $lines.Add("===== Multi-Display Mode =====")
-$lines.Add("  Mode: $([DisplayHelper]::GetTopology())")
+$displayMode = [DisplayHelper]::GetTopology()
+$lines.Add("  Mode: $displayMode")
 
 # --- Section 2: Monitors ---
 # Use Screen.PrimaryScreen to reliably identify the main display by its GDI device name.
@@ -240,11 +257,11 @@ if ($monitors.Count -eq 0) {
 # --- Section 3: Default audio output ---
 $lines.Add("")
 $lines.Add("===== Default Audio Output Device =====")
-$deviceId    = [AudioHelper]::GetDefaultDeviceId()
+$defaultAudioDeviceId = [AudioHelper]::GetDefaultDeviceId()
 $friendlyName = "Unknown"
 $regPath      = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
 foreach ($dev in Get-ChildItem -Path $regPath -ErrorAction SilentlyContinue) {
-    if ($deviceId -like "*$($dev.PSChildName)*") {
+    if ($defaultAudioDeviceId -like "*$($dev.PSChildName)*") {
         $props = Get-ItemProperty -Path "$($dev.PSPath)\Properties" -ErrorAction SilentlyContinue
         $friendlyName = $props."{a45c254e-df1c-4efd-8020-67d146a850e0},2"
         break
@@ -260,6 +277,10 @@ $lines.Add("Done.")
 # ===========================================================================
 # Always save into the output/ subfolder next to this script.
 $outputDir = Join-Path $PSScriptRoot "output"
+if (-not (Test-Path $outputDir)) {
+    New-Item -Path $outputDir -ItemType Directory | Out-Null
+}
+
 if ($Name) {
     $outputFile = Join-Path $outputDir "$Name.txt"
 } else {
@@ -267,4 +288,19 @@ if ($Name) {
 }
 $lines | Set-Content -Path $outputFile -Encoding UTF8
 
+# Save a machine-readable profile for switching mode + audio output later.
+$profileName = [System.IO.Path]::GetFileNameWithoutExtension($outputFile)
+$jsonFile = Join-Path $outputDir "$profileName.json"
+$profile = [ordered]@{
+    Name = $profileName
+    CapturedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    MultiDisplayMode = $displayMode
+    DefaultAudioOutput = [ordered]@{
+        Name = $friendlyName
+        Id = $defaultAudioDeviceId
+    }
+}
+$profile | ConvertTo-Json -Depth 5 | Set-Content -Path $jsonFile -Encoding UTF8
+
 Write-Host "Saved to: $outputFile" -ForegroundColor Green
+Write-Host "Saved to: $jsonFile" -ForegroundColor Green

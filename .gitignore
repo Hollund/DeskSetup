@@ -1,2 +1,3 @@
 # Ignore generated report files in the output folder
 output/*.txt
+output/*.json

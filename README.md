@@ -42,6 +42,30 @@ cd "path\to\DeskSetup"
 .\Get-DeskSetup.ps1 -n m1    # -> m1.txt
 ```
 
+This also saves a profile JSON next to the text file (for switching later):
+- `output/m1.txt`
+- `output/m1.json`
+
+---
+
+## Apply A Saved Profile
+
+### `Apply-DeskSetup.ps1`
+
+Applies only:
+- Multi-display mode
+- Default audio output device
+
+It does **not** change resolution or refresh rate.
+
+```powershell
+# Apply by profile name
+.\Apply-DeskSetup.ps1 -n m1
+
+# Apply latest saved profile
+.\Apply-DeskSetup.ps1
+```
+
 > **Note:** If PowerShell blocks the script, run once:
 > ```powershell
 > Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
