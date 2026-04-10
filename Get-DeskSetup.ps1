@@ -258,10 +258,12 @@ $lines.Add("Done.")
 # ===========================================================================
 # SAVE TO FILE
 # ===========================================================================
+# Always save into the output/ subfolder next to this script.
+$outputDir = Join-Path $PSScriptRoot "output"
 if ($Name) {
-    $outputFile = Join-Path $PSScriptRoot "$Name.txt"
+    $outputFile = Join-Path $outputDir "$Name.txt"
 } else {
-    $outputFile = Join-Path $PSScriptRoot "system-settings_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
+    $outputFile = Join-Path $outputDir "desk-setup_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
 }
 $lines | Set-Content -Path $outputFile -Encoding UTF8
 

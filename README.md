@@ -4,6 +4,21 @@ A PowerShell tool that snapshots your current Windows display layout and audio d
 
 ---
 
+## Folder Structure
+
+```
+DeskSetup/
+├── Get-DeskSetup.ps1       ← main script
+├── README.md
+├── .gitignore
+├── lib/                    ← individual component scripts
+│   ├── Get-DisplaySettings.ps1
+│   └── Get-SoundSettings.ps1
+└── output/                 ← generated reports (gitignored)
+```
+
+---
+
 ## Main Script
 
 ### `Get-DeskSetup.ps1`
