@@ -7,7 +7,8 @@
 
 param(
     [Alias("n")]
-    [string] $Name   # Optional custom filename (without .txt)
+    [string] $Name,       # Optional custom filename (without .txt)
+    [string] $OutputDir   # Where to save files; defaults to project root output/
 )
 
 # Always execute the main logic in a fresh child PowerShell process so
@@ -17,6 +18,9 @@ if (-not $env:DESKSETUP_CHILD) {
     $childArgs = @()
     if ($Name) {
         $childArgs += @("-n", $Name)
+    }
+    if ($OutputDir) {
+        $childArgs += @("-OutputDir", $OutputDir)
     }
 
     & powershell -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath @childArgs
@@ -275,22 +279,24 @@ $lines.Add("Done.")
 # ===========================================================================
 # SAVE TO FILE
 # ===========================================================================
-# Always save into the output/ subfolder next to this script.
-$outputDir = Join-Path $PSScriptRoot "output"
-if (-not (Test-Path $outputDir)) {
-    New-Item -Path $outputDir -ItemType Directory | Out-Null
+# Use provided OutputDir or fall back to output/ in the project root.
+if (-not $OutputDir) {
+    $OutputDir = Join-Path (Split-Path $PSScriptRoot -Parent) "output"
+}
+if (-not (Test-Path $OutputDir)) {
+    New-Item -Path $OutputDir -ItemType Directory | Out-Null
 }
 
 if ($Name) {
-    $outputFile = Join-Path $outputDir "$Name.txt"
+    $outputFile = Join-Path $OutputDir "$Name.txt"
 } else {
-    $outputFile = Join-Path $outputDir "desk-setup_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
+    $outputFile = Join-Path $OutputDir "desk-setup_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
 }
 $lines | Set-Content -Path $outputFile -Encoding UTF8
 
 # Save a machine-readable profile for switching mode + audio output later.
 $profileName = [System.IO.Path]::GetFileNameWithoutExtension($outputFile)
-$jsonFile = Join-Path $outputDir "$profileName.json"
+$jsonFile = Join-Path $OutputDir "$profileName.json"
 $profile = [ordered]@{
     Name = $profileName
     CapturedAt = Get-Date -Format "yyyy-MM-dd HH:mm:ss"

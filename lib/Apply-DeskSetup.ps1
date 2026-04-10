@@ -6,22 +6,26 @@
 #
 # Usage:
 #   .\Apply-DeskSetup.ps1 -n m1
-#   .\Apply-DeskSetup.ps1 -ProfilePath .\output\m1.json
+#   .\Apply-DeskSetup.ps1 -ProfilePath .\SetDesk Profiles\m1.json
 
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [Alias("n")]
     [string] $Name,
-    [string] $ProfilePath
+    [string] $ProfilePath,
+    [string] $ProfilesDir
 )
 
-# Resolve profile path: explicit path > name > latest json in output/
+# Resolve profile path: explicit path > name in ProfilesDir > latest json in ProfilesDir.
 if (-not $ProfilePath) {
-    $outputDir = Join-Path $PSScriptRoot "output"
+    if (-not $ProfilesDir) {
+        $ProfilesDir = Join-Path (Split-Path $PSScriptRoot -Parent) "SetDesk Profiles"
+    }
+
     if ($Name) {
-        $ProfilePath = Join-Path $outputDir "$Name.json"
+        $ProfilePath = Join-Path $ProfilesDir "$Name.json"
     } else {
-        $latest = Get-ChildItem -Path $outputDir -Filter "*.json" -ErrorAction SilentlyContinue |
+        $latest = Get-ChildItem -Path $ProfilesDir -Filter "*.json" -ErrorAction SilentlyContinue |
             Sort-Object LastWriteTime -Descending |
             Select-Object -First 1
         if ($latest) {
@@ -31,7 +35,7 @@ if (-not $ProfilePath) {
 }
 
 if (-not $ProfilePath -or -not (Test-Path $ProfilePath)) {
-    throw "Profile JSON not found. Use -n <name> or -ProfilePath <path-to-json>."
+    throw "Profile JSON not found. Use -n <name>, -ProfilesDir <folder>, or -ProfilePath <path-to-json>."
 }
 
 $profile = Get-Content -Path $ProfilePath -Raw | ConvertFrom-Json

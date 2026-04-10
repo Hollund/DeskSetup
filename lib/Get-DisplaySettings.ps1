@@ -8,7 +8,8 @@
 # Why this script uses C#:
 param(
     [Alias("n")]
-    [string] $Name   # Optional custom filename (without .txt)
+    [string] $Name,      # Optional custom filename (without .txt)
+    [string] $OutputDir  # Optional output folder; defaults to project output/
 )
 #
 # - Windows stores display topology (Extended / Duplicate / Show only X) in low-level APIs.
@@ -199,10 +200,17 @@ $lines.Add("")
 $lines.Add("Done.")
 
 # Save report — use custom name if -n was given, otherwise use a timestamp.
+if (-not $OutputDir) {
+    $OutputDir = Join-Path (Split-Path $PSScriptRoot -Parent) "output"
+}
+if (-not (Test-Path $OutputDir)) {
+    New-Item -Path $OutputDir -ItemType Directory | Out-Null
+}
+
 if ($Name) {
-    $outputFile = Join-Path $PSScriptRoot "$Name.txt"
+    $outputFile = Join-Path $OutputDir "$Name.txt"
 } else {
-    $outputFile = Join-Path $PSScriptRoot "display-settings_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
+    $outputFile = Join-Path $OutputDir "display-settings_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
 }
 $lines | Set-Content -Path $outputFile -Encoding UTF8
 

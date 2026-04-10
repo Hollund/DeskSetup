@@ -7,7 +7,8 @@
 
 param(
     [Alias("n")]
-    [string] $Name   # Optional custom filename (without .txt)
+    [string] $Name,      # Optional custom filename (without .txt)
+    [string] $OutputDir  # Optional output folder; defaults to project output/
 )
 
 # ---- Step 1: Load a small C# helper (only once per PowerShell session) ----
@@ -86,10 +87,17 @@ $lines.Add("Done.")
 
 # ---- Step 4: Save to file ----
 # Use custom name if -n was given, otherwise fall back to a timestamp.
+if (-not $OutputDir) {
+    $OutputDir = Join-Path (Split-Path $PSScriptRoot -Parent) "output"
+}
+if (-not (Test-Path $OutputDir)) {
+    New-Item -Path $OutputDir -ItemType Directory | Out-Null
+}
+
 if ($Name) {
-    $outputFile = Join-Path $PSScriptRoot "$Name.txt"
+    $outputFile = Join-Path $OutputDir "$Name.txt"
 } else {
-    $outputFile = Join-Path $PSScriptRoot "sound-settings_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
+    $outputFile = Join-Path $OutputDir "sound-settings_$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').txt"
 }
 $lines | Set-Content -Path $outputFile -Encoding UTF8
 
