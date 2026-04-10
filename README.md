@@ -1,6 +1,20 @@
 # DeskSetup
 
-A PowerShell tool that snapshots your current Windows display layout and audio device to a text file.
+Save and restore your Windows desk setup — multi-display mode and default audio device — with a single click.
+
+No installation required. Pure PowerShell, no third-party dependencies.
+
+---
+
+## What it does
+
+Click **Save Profile 1** (or 2/3/4) in the `SetDesk Profiles` folder to snapshot your current setup. Click **Load Profile 1** to restore it. That's it.
+
+Each profile stores:
+- Multi-display mode (Extended / Duplicate / Show Only 1 / Show Only External)
+- Default audio output device
+
+It does **not** change resolution or refresh rate.
 
 ---
 
@@ -8,76 +22,63 @@ A PowerShell tool that snapshots your current Windows display layout and audio d
 
 ```
 DeskSetup/
-├── Get-DeskSetup.ps1       ← main script
-├── README.md
-├── .gitignore
-├── lib/                    ← individual component scripts
+├── Save_Profile.ps1          ← save current setup to a numbered profile
+├── Load_Profile.ps1          ← restore a saved profile
+├── SetDesk Profiles/         ← shortcuts + saved profile files (json/txt)
+│   └── Create-Shortcuts.ps1  ← recreate the Save/Load shortcuts
+├── lib/                      ← core logic scripts
+│   ├── Get-DeskSetup.ps1
+│   ├── Apply-DeskSetup.ps1
 │   ├── Get-DisplaySettings.ps1
 │   └── Get-SoundSettings.ps1
-└── output/                 ← generated reports (gitignored)
+└── output/                   ← ad-hoc reports (gitignored)
 ```
 
 ---
 
-## Main Script
+## Getting started
 
-### `Get-DeskSetup.ps1`
+1. Clone or copy the folder anywhere on your PC
+2. Run `SetDesk Profiles\Create-Shortcuts.ps1` once to create the shortcuts
+3. Use the shortcuts in `SetDesk Profiles\` to save and load
 
-Saves a combined display + audio report to a text file.
-
-**What it captures:**
-- Multi-display mode (Extended / Duplicate / Show Only 1 / Show Only External)
-- Active monitors — name, refresh rate, and which one is the main display
-- Default audio output device
-
-**How to run:**
-
-```powershell
-cd "path\to\DeskSetup"
-
-# Save with a timestamp
-.\Get-DeskSetup.ps1
-
-# Save with a custom name
-.\Get-DeskSetup.ps1 -n m1    # -> m1.txt
-```
-
-This also saves a profile JSON next to the text file (for switching later):
-- `output/m1.txt`
-- `output/m1.json`
-
----
-
-## Apply A Saved Profile
-
-### `Apply-DeskSetup.ps1`
-
-Applies only:
-- Multi-display mode
-- Default audio output device
-
-It does **not** change resolution or refresh rate.
-
-```powershell
-# Apply by profile name
-.\Apply-DeskSetup.ps1 -n m1
-
-# Apply latest saved profile
-.\Apply-DeskSetup.ps1
-```
-
-> **Note:** If PowerShell blocks the script, run once:
+> If PowerShell blocks the scripts, run once:
 > ```powershell
 > Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 > ```
 
 ---
 
-## Individual Scripts
+## Command line usage
 
-| Script | Purpose |
+```powershell
+.\Save_Profile.ps1 -n 1   # save current setup as profile 1
+.\Load_Profile.ps1 -n 1   # restore profile 1
+```
+
+Optional arguments:
+
+| Argument | Default | Description |
+|---|---|---|
+| `-n` | required | Profile number (1, 2, 3 ...) |
+| `-ProfilesDir` | `SetDesk Profiles\` | Where profiles are stored |
+| `-Prefix` | `profile_` | Filename prefix |
+
+---
+
+## Alternatives
+
+If you need more advanced switching (resolution, refresh rate, per-app audio routing):
+
+| Tool | What it adds |
 |---|---|
-| `Get-DisplaySettings.ps1` | Display info only |
+| [DisplayFusion](https://www.displayfusion.com/) | Full multi-monitor management, wallpaper, hotkeys |
+| [MonitorSwitcher](https://sourceforge.net/projects/monitorswitcher/) | Save/restore full display layout including resolution |
+| [NirSoft MultiMonitorTool](https://www.nirsoft.net/utils/multi_monitor_tool.html) | Command-line display switching, free |
+| [SoundSwitch](https://github.com/Belphemur/SoundSwitch) | Hotkey-based audio device switcher, open source |
+| [AutoHotkey](https://www.autohotkey.com/) | Script anything, full control |
+
+DeskSetup is intentionally minimal — no GUI, no tray icon, no install. Just shortcuts that work.
 | `Get-SoundSettings.ps1` | Default audio device only |
 
 ---
